@@ -1,0 +1,45 @@
+live_config_reload = true
+import = [
+    "~/.config/alacritty/colors.toml",
+    "~/.config/alacritty/opacity.toml"
+]   
+
+[env]
+TERM = "xterm-256color"
+
+[window]
+decorations = "Full"
+dynamic_padding = false
+# opacity = 0.9
+dimensions = { columns = 100, lines = 40 }
+option_as_alt = "Both"
+
+
+[window.padding]
+x = 2
+y = 2
+
+[font]
+size = 20.0
+
+[font.bold]
+family = "JetBrainsMono Nerd Font"
+style = "Heavy"
+
+[font.bold_italic]
+family = "JetBrainsMono Nerd Font"
+style = "Heavy Italic"
+
+[font.italic]
+family = "JetBrainsMono Nerd Font"
+style = "Medium Italic"
+
+[font.normal]
+family = "JetBrainsMono Nerd Font"
+style = "Medium"
+
+
+[[keyboard.bindings]]
+key = "Return"
+mods = "Shift"
+chars = "\u001B\r"

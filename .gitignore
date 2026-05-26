@@ -1,0 +1,13 @@
+# Claude Code project data
+.claude/
+
+# Karabiner automatic backups (machine-specific, not worth tracking)
+karabiner/.config/karabiner/automatic_backups/
+
+# macOS
+.DS_Store
+
+# Editor swap/backup files
+*.swp
+*.swo
+*~
