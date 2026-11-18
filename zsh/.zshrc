@@ -80,7 +80,9 @@ eval "$(fzf --zsh)"
 
 export PATH="/usr/local/sbin:$PATH"
 export PATH=$PATH:/usr/local/go/bin
-export PATH=$PATH:$(go env GOPATH)/bin
+if command -v go &>/dev/null; then
+  export PATH=$PATH:$(go env GOPATH)/bin
+fi
 export PATH=$PATH:~/bin
 
 if [[ -f ~/.zshrc.local ]]; then

@@ -45,8 +45,17 @@ case "$PKG_MGR" in
   zypper) sudo zypper refresh ;;
 esac
 
-# Core packages (names are consistent across major distros)
-PACKAGES=(git zsh stow neovim fzf)
+# Core packages (names are consistent across major distros).
+# fontconfig provides fc-cache for the font install below; minimal installs
+# and container templates do not have it.
+PACKAGES=(git zsh stow fzf fontconfig)
+# Skip the distro neovim when one is already installed (e.g. the pinned
+# release from the bootstrap script) - Debian's is too old anyway.
+if command -v nvim &>/dev/null; then
+  echo -e "${OK} nvim already installed: $(command -v nvim)"
+else
+  PACKAGES+=(neovim)
+fi
 echo -e "${INFO} Installing core packages: ${PACKAGES[*]}"
 install_pkgs "${PACKAGES[@]}"
 
@@ -70,19 +79,25 @@ fi
 # ---------------------------------------------------------------------------
 # JetBrainsMono Nerd Font
 # ---------------------------------------------------------------------------
+# Unpacked to a temp dir and moved into place only once that succeeded, and
+# only counted as installed once fontconfig can see it - so a failed run is
+# retried next time instead of being skipped.
 FONT_DIR="${HOME}/.local/share/fonts/JetBrainsMono"
-if [[ -d "$FONT_DIR" ]]; then
+if [[ -d "$FONT_DIR" && -n "$(fc-list "JetBrainsMono Nerd Font" family 2>/dev/null)" ]]; then
   echo -e "${OK} JetBrainsMono Nerd Font already installed at ${FONT_DIR}"
 else
   echo -e "${INFO} Downloading JetBrainsMono Nerd Font..."
   TMPDIR_FONT="$(mktemp -d)"
+  trap 'rm -rf "$TMPDIR_FONT"' EXIT
   FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz"
   curl -fsSL "$FONT_URL" -o "${TMPDIR_FONT}/JetBrainsMono.tar.xz"
-  mkdir -p "$FONT_DIR"
-  tar -xf "${TMPDIR_FONT}/JetBrainsMono.tar.xz" -C "$FONT_DIR"
-  rm -rf "$TMPDIR_FONT"
+  mkdir -p "${TMPDIR_FONT}/JetBrainsMono"
+  tar -xJf "${TMPDIR_FONT}/JetBrainsMono.tar.xz" -C "${TMPDIR_FONT}/JetBrainsMono"
+  mkdir -p "$(dirname "$FONT_DIR")"
+  rm -rf "$FONT_DIR"
+  mv "${TMPDIR_FONT}/JetBrainsMono" "$FONT_DIR"
   echo -e "${INFO} Refreshing font cache..."
-  fc-cache -fv
+  fc-cache -f "$FONT_DIR"
   echo -e "${OK} JetBrainsMono Nerd Font installed"
 fi
 

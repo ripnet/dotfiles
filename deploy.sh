@@ -87,10 +87,42 @@ else
   echo -e "${INFO} Skipping karabiner (macOS only)."
 fi
 
+# ---------------------------------------------------------------------------
+# Undo directory folding from older runs
+#
+# Without --no-folding, stow links a whole directory when it does not exist
+# yet (e.g. ~/.config -> dotfiles/nvim/.config). Every program that writes to
+# ~/.config then writes into this repo. Replace such links with real
+# directories and move anything git does not track back out of the repo.
+# ---------------------------------------------------------------------------
+unfold() {
+  local pkg="$1" entry name link item rel
+  for entry in "$DOTFILES_DIR/$pkg"/.[!.]* "$DOTFILES_DIR/$pkg"/*; do
+    [[ -d $entry ]] || continue
+    name="$(basename "$entry")"
+    link="$HOME/$name"
+    [[ -L $link ]] || continue
+    [[ "$(readlink -f "$link")" == "$(readlink -f "$entry")" ]] || continue
+
+    echo -e "${WARN} ~/${name} is a folded stow link into ${pkg}/ - unfolding"
+    rm "$link"
+    mkdir -p "$link"
+    for item in "$entry"/.[!.]* "$entry"/*; do
+      [[ -e $item ]] || continue
+      rel="${item#"$DOTFILES_DIR"/}"
+      if [[ -z "$(git -C "$DOTFILES_DIR" ls-files -- "$rel")" ]]; then
+        echo -e "${INFO}   moving untracked ${rel} -> ~/${name}/"
+        mv "$item" "$link/"
+      fi
+    done
+  done
+}
+
 echo -e "${INFO} Stowing packages: ${PACKAGES[*]}"
 for pkg in "${PACKAGES[@]}"; do
-  echo -e "${INFO} stow --restow ${pkg}"
-  stow --restow --dir="$DOTFILES_DIR" --target="$HOME" "$pkg"
+  unfold "$pkg"
+  echo -e "${INFO} stow --no-folding --restow ${pkg}"
+  stow --no-folding --restow --dir="$DOTFILES_DIR" --target="$HOME" "$pkg"
   echo -e "${OK} ${pkg} stowed"
 done
 
